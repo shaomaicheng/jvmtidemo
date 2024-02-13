@@ -40,7 +40,7 @@ void JNICALL objectAlloc
     jvmti_env->GetClassSignature(object_klass, &classSignature, nullptr);
     ostringstream  ss;
     //collect MemoryFreeTestItem
-    if (std::strstr(classSignature,"MemoryFreeTestItem")) {
+    if (std::strstr(classSignature,"com/example/jvmtidmeo")) {
         mtx.lock();
         jvmti_env->SetTag(object, tag);
         ss << "object Alloc:" << classSignature << ";tag:"<<tag;
@@ -59,11 +59,11 @@ void JNICALL objectAlloc
  void JNICALL objectFree(jvmtiEnv *jvmti_env,
          jlong tag)
 {
-    __android_log_print(ANDROID_LOG_ERROR, "chenglei", "objectFree,tag is %ld", tag);
+//    __android_log_print(ANDROID_LOG_ERROR, "chenglei", "objectFree,tag is %ld", tag);
     if (clazzMap.count(tag) > 0) {
         ostringstream ss;
         mtx.lock();
-        ss << "free:" << clazzMap[tag];
+        ss << "free:" << clazzMap[tag] << "; tag: " << tag;
         const char* log = ss.str().c_str();
         clazzMap.erase(tag);
         mtx.unlock();
