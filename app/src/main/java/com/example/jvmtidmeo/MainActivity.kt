@@ -1,11 +1,13 @@
 package com.example.jvmtidmeo
 
+import android.content.Intent
 import android.os.Bundle
 import android.os.Debug
 import android.os.Handler
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -17,10 +19,9 @@ import com.example.jvmtidmeo.ui.theme.JvmtidmeoTheme
 import com.example.mylibrary.JvmtiConfig
 
 class MainActivity : ComponentActivity() {
-    var list:ArrayList<StringWrapper>? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        JvmtiConfig().enableJvmti(this)
+
         setContent {
             JvmtidmeoTheme {
                 // A surface container using the 'background' color from the theme
@@ -28,27 +29,29 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    Greeting("Android")
+                    Greeting("Android", modifier = Modifier.clickable {
+                        MemorySample.alloc()
+                        startActivityForResult(Intent(this@MainActivity, SecondActivity::class.java), 0x11)
+                    })
                 }
             }
         }
-
-        list = arrayListOf()
-        for (i in 0..100) {
-            val str = StringWrapper(i.toString())
-            list?.add(str)
-        }
-        Handler().postDelayed(Runnable {
-            list = null
-            System.gc()
-            Log.e("chenglei", "gc!!! ")
-
-            Thread.sleep(5000)
-        }, 3000)
     }
-}
 
-class StringWrapper(s:String)
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        when (resultCode) {
+            RESULT_OK->{
+                data?.getBooleanExtra("memory", false)?.let {
+                    if (it) {
+                        MemorySample.free()
+                    }
+                }
+            }
+        }
+    }
+
+}
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {

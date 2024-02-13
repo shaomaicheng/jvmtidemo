@@ -17,6 +17,7 @@ android {
             abiFilters.apply {
                 add("arm64-v8a")
                 add("armeabi-v7a")
+                add("x86_64")
             }
         }
     }
