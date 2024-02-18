@@ -6,6 +6,7 @@
 #include "jnicall.h"
 #include "jvmti.h"
 #include "sys/syscall.h"
+#include "pthread.h"
 
 jclass jvmtiFindClass(JNIEnv *env, jvmtiEnv *jvmtiEnv, jstring className) {
     jclass classClazz = env->FindClass("java/lang/Class");
@@ -35,12 +36,17 @@ JNIEnv *detectJniEnv(JavaVM* g_JavaVM) {
     return env;
 }
 
-void jvmtiReport(JNIEnv *jni_env, jvmtiEnv *jvmtiEnv, JavaVM *vm, int type, const char *log) {
 
-    if (jni_env == nullptr) {
-        jni_env=detectJniEnv(vm);
+
+void jvmtiReport(JNIEnv *jni_env, jvmtiEnv *jvmtiEnv, JavaVM *vm, int type, const char *log) {
+    jboolean thread= false;
+    if (jni_env == nullptr){
+        thread= true;
     }
-    __android_log_print(ANDROID_LOG_ERROR,"chenglei_jni","11111111");
+    if (thread)
+    {
+        vm->AttachCurrentThread(&jni_env, nullptr);
+    }
     jstring name = jni_env->NewStringUTF("com.example.mylibrary.JvmtiReport");
     jclass reportClazz = jvmtiFindClass(jni_env, jvmtiEnv, name);
     if (reportClazz == nullptr) {
@@ -48,10 +54,17 @@ void jvmtiReport(JNIEnv *jni_env, jvmtiEnv *jvmtiEnv, JavaVM *vm, int type, cons
         return;
     }
 
-
     jmethodID reportMethodId = jni_env->GetStaticMethodID(reportClazz, "report",
                                                           "(ILjava/lang/String;)V");
     jstring logParam = jni_env->NewStringUTF(log);
     jni_env->CallStaticVoidMethod(reportClazz, reportMethodId, type, logParam);
+    if (thread)
+    {
+        vm->DetachCurrentThread();
+    }
+}
 
+void jvmtiReportWithP( JvmtiReportParam param)
+{
+    jvmtiReport(nullptr, param.jvmtiEnv, param.vm, param.type,param.log);
 }

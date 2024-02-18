@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include "thread_utils.h"
 #include "jnicall.h"
+#include "pthread.h"
 
 
 using namespace std;
@@ -40,7 +41,7 @@ void JNICALL objectAlloc
         const char* log = logcpp.c_str();
         // todo
         reportMtx.lock();
-//        jvmtiReport(jni_env, jvmti ,g_vm,JVMTI_ALLOC_MEMORY, log);
+        jvmtiReport(jni_env, jvmti ,g_vm,JVMTI_ALLOC_MEMORY, log);
         reportMtx.unlock();
         mtx.lock();
         jvmti_env->SetTag(object, tag);
@@ -64,28 +65,46 @@ void JNICALL objectAlloc
         clazzMap.erase(tag);
         mtx.unlock();
         reportMtx.lock();
+        pthread_t pthread;
+        JvmtiReportParam* p=new JvmtiReportParam;
+        p->jvmtiEnv = jvmti;
+        p->vm=g_vm;
+        p->type=JVMTI_FREE_MEMORY;
+        p->log=log;
+        pthread_create(&pthread, NULL, reinterpret_cast<void *(*)(void *)>(jvmtiReportWithP), (void*)p);
 //        jvmtiReport(nullptr, jvmti,g_vm,JVMTI_FREE_MEMORY, log);
         reportMtx.unlock();
-//        __android_log_print(ANDROID_LOG_ERROR, "chenglei", "%s", log);
-    } else {
-//        __android_log_print(ANDROID_LOG_ERROR, "chenglei", "clazzMap内不存在%ld", tag);
     }
 }
 
 
 void JNICALL gcStart(jvmtiEnv *jvmti_env) {
     __android_log_print(ANDROID_LOG_ERROR, "chenglei_jni", "gc Start");
-//    reportMtx.lock();
+    reportMtx.lock();
+    pthread_t pthread;
+    JvmtiReportParam* p=new JvmtiReportParam;
+    p->jvmtiEnv = jvmti;
+    p->vm=g_vm;
+    p->type=JVMTI_GC_START;
+    p->log="gc_start";
+    pthread_create(&pthread, NULL, reinterpret_cast<void *(*)(void *)>(jvmtiReportWithP), (void*)p);
 //    jvmtiReport(nullptr,jvmti,g_vm, JVMTI_GC_START, "gc_start");
-//    reportMtx.unlock();
+    reportMtx.unlock();
 
 }
 
 void JNICALL gcFinish(jvmtiEnv *jvmti_env){
     __android_log_print(ANDROID_LOG_ERROR, "chenglei_jni", "gc Finish");
-//    reportMtx.lock();
+    reportMtx.lock();
+    pthread_t pthread;
+    JvmtiReportParam* p=new JvmtiReportParam;
+    p->jvmtiEnv = jvmti;
+    p->vm=g_vm;
+    p->type=JVMTI_GC_END;
+    p->log="gc_finish";
+    pthread_create(&pthread, NULL, reinterpret_cast<void *(*)(void *)>(jvmtiReportWithP), (void*)p);
 //    jvmtiReport(nullptr, jvmti,g_vm,JVMTI_GC_END, "gc_finish");
-//    reportMtx.unlock();
+    reportMtx.unlock();
 }
 
 
