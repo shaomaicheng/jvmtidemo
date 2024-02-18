@@ -16,6 +16,8 @@ add_library( # Specifies the name of the library.
         entry.cpp
         thread_utils.h
         jvmti.h
+        jnicall.cpp
+        jnicall.h
         ${FILE_DIR}
         )
 add_library(include SHARED IMPORTED)

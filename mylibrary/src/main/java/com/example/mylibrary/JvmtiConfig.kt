@@ -23,6 +23,8 @@ class JvmtiConfig {
     }
 
     fun enableJvmti(context: Context){
+        System.loadLibrary("jvmtidemo")
+        demo()
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
                 enableInner(context)
