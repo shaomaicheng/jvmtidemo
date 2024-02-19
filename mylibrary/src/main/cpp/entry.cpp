@@ -11,41 +11,34 @@
 
 
 using namespace std;
-jvmtiEnv  *jvmti = nullptr;
+jvmtiEnv *jvmti = nullptr;
 
-std::unordered_map<long, char*> clazzMap = {};
+std::unordered_map<long, char *> clazzMap = {};
 std::mutex mtx;
-std::mutex reportMtx;
 
 JavaVM *g_vm;
 
 
 long tag = 0;
+
 void JNICALL objectAlloc
         (jvmtiEnv *jvmti_env,
-         JNIEnv* jni_env,
+         JNIEnv *jni_env,
          jthread thread,
          jobject object,
          jclass object_klass,
-         jlong size)
-{
-    char* classSignature= nullptr;
+         jlong size) {
+    char *classSignature = nullptr;
     jvmti_env->GetClassSignature(object_klass, &classSignature, nullptr);
-    ostringstream  ss;
+    ostringstream ss;
     //collect MemoryFreeTestItem
-    if (std::strstr(classSignature,"com/example/jvmtidmeo")) {
-
-
-        ss << "object Alloc:" << classSignature << ";tag:"<<tag;
+    if (std::strstr(classSignature, "com/example/jvmtidmeo")) {
+        ss << "object Alloc:" << classSignature << ";tag:" << tag;
         string logcpp = ss.str();
-        const char* log = logcpp.c_str();
-        // todo
-        reportMtx.lock();
-        jvmtiReport(jni_env, jvmti ,g_vm,JVMTI_ALLOC_MEMORY, log);
-        reportMtx.unlock();
+        const char *log = logcpp.c_str();
+        jvmtiReport(jni_env, jvmti, g_vm, JVMTI_ALLOC_MEMORY, log);
         mtx.lock();
         jvmti_env->SetTag(object, tag);
-//        __android_log_print(ANDROID_LOG_ERROR, "chenglei", "%s", log);
         clazzMap[tag] = classSignature;
         tag++;
         mtx.unlock();
@@ -54,79 +47,69 @@ void JNICALL objectAlloc
 }
 
 
- void JNICALL objectFree(jvmtiEnv *jvmti_env,
-         jlong tag)
-{
+void JNICALL objectFree(jvmtiEnv *jvmti_env,
+                        jlong tag) {
     if (clazzMap.count(tag) > 0) {
         ostringstream ss;
         mtx.lock();
         ss << "free:" << clazzMap[tag] << "; tag: " << tag;
-        const char* log = ss.str().c_str();
+        const char *log = ss.str().c_str();
         clazzMap.erase(tag);
         mtx.unlock();
-        reportMtx.lock();
-        pthread_t pthread;
-        JvmtiReportParam* p=new JvmtiReportParam;
+        JvmtiReportParam *p = new JvmtiReportParam;
         p->jvmtiEnv = jvmti;
-        p->vm=g_vm;
-        p->type=JVMTI_FREE_MEMORY;
-        p->log=log;
-        pthread_create(&pthread, NULL, reinterpret_cast<void *(*)(void *)>(jvmtiReportWithP), (void*)p);
-//        jvmtiReport(nullptr, jvmti,g_vm,JVMTI_FREE_MEMORY, log);
-        reportMtx.unlock();
+        p->vm = g_vm;
+        p->type = JVMTI_FREE_MEMORY;
+        p->log = log;
+        jvmtiReportWithP(p);
     }
 }
 
 
 void JNICALL gcStart(jvmtiEnv *jvmti_env) {
     __android_log_print(ANDROID_LOG_ERROR, "chenglei_jni", "gc Start");
-    reportMtx.lock();
-    pthread_t pthread;
-    JvmtiReportParam* p=new JvmtiReportParam;
+    JvmtiReportParam *p = new JvmtiReportParam;
     p->jvmtiEnv = jvmti;
-    p->vm=g_vm;
-    p->type=JVMTI_GC_START;
-    p->log="gc_start";
-    pthread_create(&pthread, NULL, reinterpret_cast<void *(*)(void *)>(jvmtiReportWithP), (void*)p);
-//    jvmtiReport(nullptr,jvmti,g_vm, JVMTI_GC_START, "gc_start");
-    reportMtx.unlock();
+    p->vm = g_vm;
+    p->type = JVMTI_GC_START;
+    p->log = "gc_start";
+    jvmtiReportWithP(p);
 
 }
 
-void JNICALL gcFinish(jvmtiEnv *jvmti_env){
+void JNICALL gcFinish(jvmtiEnv *jvmti_env) {
     __android_log_print(ANDROID_LOG_ERROR, "chenglei_jni", "gc Finish");
-    reportMtx.lock();
-    pthread_t pthread;
-    JvmtiReportParam* p=new JvmtiReportParam;
+
+    JvmtiReportParam *p = new JvmtiReportParam;
     p->jvmtiEnv = jvmti;
-    p->vm=g_vm;
-    p->type=JVMTI_GC_END;
-    p->log="gc_finish";
-    pthread_create(&pthread, NULL, reinterpret_cast<void *(*)(void *)>(jvmtiReportWithP), (void*)p);
-//    jvmtiReport(nullptr, jvmti,g_vm,JVMTI_GC_END, "gc_finish");
-    reportMtx.unlock();
+    p->vm = g_vm;
+    p->type = JVMTI_GC_END;
+    p->log = "gc_finish";
+    jvmtiReportWithP(p);
+
 }
 
 
 extern "C"
 JNIEXPORT jint JNICALL
-Agent_OnAttach(JavaVM* vm, char* options, void* reserved) {
+Agent_OnAttach(JavaVM *vm, char *options, void *reserved) {
     g_vm = vm;
     __android_log_print(ANDROID_LOG_ERROR, "chenglei_jni", "Agent OnAttacth");
-    jint getEnv = vm->GetEnv(reinterpret_cast<void **>(&jvmti), JVMTI_VERSION_1_2); // todo jvmti_version?
+    jint getEnv = vm->GetEnv(reinterpret_cast<void **>(&jvmti),
+                             JVMTI_VERSION_1_2); // todo jvmti_version?
     if (getEnv != JNI_OK) {
         __android_log_print(ANDROID_LOG_ERROR, "chenglei_jni", "jvmti设置代理失败！");
         return JNI_ERR;
     }
 
-
-
+    JNIEnv* jniEnv;
+    vm->GetEnv(reinterpret_cast<void **>(&jniEnv), JNI_VERSION_1_6);
     jvmtiCapabilities caps;
     jvmti->GetPotentialCapabilities(&caps);
     jvmti->AddCapabilities(&caps);
 
-    jvmti->SetEventNotificationMode(JVMTI_ENABLE,JVMTI_EVENT_VM_OBJECT_ALLOC, nullptr);
-    jvmti->SetEventNotificationMode(JVMTI_ENABLE,JVMTI_EVENT_OBJECT_FREE, nullptr);
+    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_VM_OBJECT_ALLOC, nullptr);
+    jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_OBJECT_FREE, nullptr);
     jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_START, nullptr);
     jvmti->SetEventNotificationMode(JVMTI_ENABLE, JVMTI_EVENT_GARBAGE_COLLECTION_FINISH, nullptr);
 
@@ -141,7 +124,6 @@ Agent_OnAttach(JavaVM* vm, char* options, void* reserved) {
     if (jvmti != nullptr) {
         jvmti->SetEventCallbacks(&callbacks, sizeof(callbacks));
     }
-
 
 
     return 0;

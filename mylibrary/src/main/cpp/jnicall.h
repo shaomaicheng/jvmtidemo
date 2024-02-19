@@ -26,4 +26,4 @@ struct JvmtiReportParam {
 };
 
 void jvmtiReport(JNIEnv* jni_env,jvmtiEnv* jvmtiEnv,JavaVM *vm,int type, const char* log); // 上报日志
-void jvmtiReportWithP( JvmtiReportParam param);
+void jvmtiReportWithP( JvmtiReportParam* param);
