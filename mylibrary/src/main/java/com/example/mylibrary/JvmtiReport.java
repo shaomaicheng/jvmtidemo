@@ -30,4 +30,5 @@ public class JvmtiReport {
     static final int MEMORY_FREE = 1;
     static final int GC_START = 2;
     static final int GC_END = 3;
+
 }

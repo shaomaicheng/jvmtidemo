@@ -11,6 +11,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.ZoneId
 import java.util.zip.ZipFile
+import kotlin.math.log
 
 /**
  * @author chenglei01
@@ -31,6 +32,7 @@ class JvmtiConfig {
         }
         val logDirPath = logDir.absolutePath
         demo(logDirPath)
+        JavaConfig.logDirPath = logDirPath
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
 

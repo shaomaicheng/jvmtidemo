@@ -12,12 +12,6 @@
 
 #endif //JVMTIDMEO_JNICALL_H
 
-
-const int JVMTI_ALLOC_MEMORY = 0;
-const int JVMTI_FREE_MEMORY = 1;
-const int JVMTI_GC_START = 2;
-const int JVMTI_GC_END = 3;
-
 struct JvmtiReportParam {
     jvmtiEnv *jvmtiEnv;
     JavaVM *vm;

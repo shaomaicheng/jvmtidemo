@@ -20,6 +20,8 @@ add_library( # Specifies the name of the library.
         memory.cpp
         memory.h
         common.h
+        recordlog.cpp
+        recordlog.h
         ${FILE_DIR}
         )
 add_library(include SHARED IMPORTED)

@@ -10,14 +10,16 @@
 #include "sstream"
 #include <unordered_map>
 #include "pthread.h"
+#include "recordlog.h"
+#include "common.h"
 
-using namespace std;
 
 long tag = 0;
 
 std::unordered_map<long, char *> clazzMap = {};
 std::mutex mtx;
 
+using namespace std;
 
 void JNICALL objectAlloc
         (jvmtiEnv *jvmti_env,
@@ -33,6 +35,7 @@ void JNICALL objectAlloc
         ss << "object Alloc:" << classSignature << ";tag:" << tag;
         string logcpp = ss.str();
         const char *log = logcpp.c_str();
+        record_jvmti_log(jvmti_env, JVMTI_ALLOC_MEMORY, log);
         // 反过来调用java做上报有难度
 //        jvmtiReport(jni_env, jvmti, g_vm, JVMTI_ALLOC_MEMORY, log);
         mtx.lock();
@@ -74,6 +77,7 @@ void JNICALL gcStart(jvmtiEnv *jvmti_env) {
     p->type = JVMTI_GC_START;
     p->log = "gc_start";
     jvmtiReportWithP(p);*/
+    record_jvmti_log(jvmti_env, JVMTI_GC_START, "gc Start");
 
 }
 
