@@ -7,10 +7,15 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import java.io.File
 import java.io.FileOutputStream
+import java.io.RandomAccessFile
+import java.nio.channels.FileChannel
+import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.time.ZoneId
+import java.util.Base64
 import java.util.zip.ZipFile
+import javax.net.ssl.StandardConstants
 import kotlin.math.log
 
 /**
@@ -33,10 +38,34 @@ class JvmtiConfig {
         val logDirPath = logDir.absolutePath
         demo(logDirPath)
         JavaConfig.logDirPath = logDirPath
+
+        // 读取现有的看看内容
+        File(logDirPath).listFiles()?.forEach { file->
+            file?.let { file->
+                val random = RandomAccessFile(file,"rw")
+                val fileChannel = random.channel
+                val mappedByteBuffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, 0, fileChannel.size())
+                var i = 0
+                var content = ""
+                while (i < mappedByteBuffer.limit())
+                {
+                    val char = mappedByteBuffer.get()
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        content+=(String(byteArrayOf(char),StandardCharsets.UTF_8))
+                    }
+
+                    i++
+                }
+                fileChannel.close()
+                random.close()
+                Log.e("chenglei_java", "日志文件内容：$content")
+            }
+        }
+
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
 
-                enableInner(context)
+//                enableInner(context)
             } catch (e: Exception) {
                 e.printStackTrace()
             }
