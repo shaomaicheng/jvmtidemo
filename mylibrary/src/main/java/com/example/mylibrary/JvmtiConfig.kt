@@ -24,9 +24,16 @@ class JvmtiConfig {
 
     fun enableJvmti(context: Context){
         System.loadLibrary("jvmtidemo")
-        demo()
+        // 日志根目录传给jni
+        val logDir = File(context.externalCacheDir, "jvmtiLog")
+        if (!logDir.exists()) {
+            logDir.mkdirs()
+        }
+        val logDirPath = logDir.absolutePath
+        demo(logDirPath)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
+
                 enableInner(context)
             } catch (e: Exception) {
                 e.printStackTrace()
@@ -102,7 +109,7 @@ class JvmtiConfig {
 
     companion object {
         @JvmStatic
-        external fun demo()
+        external fun demo(logDirPath:String)
 
 
         private const val JVMTI_LIB_NAME = "libjvmtidemo.so"
