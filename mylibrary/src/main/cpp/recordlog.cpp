@@ -49,6 +49,7 @@ void resize(int fd, int type, int needSize)
 void record_jvmti_log(jvmtiEnv *jvmtiEnv, int type, const char* log)
 {
     char* realLog = static_cast<char *>(malloc(strlen(log) + 1));
+    strcpy(realLog, log);
     strcat(realLog,"\n");
     int log_type_temp;
     switch (type) {
@@ -112,7 +113,7 @@ void record_jvmti_log(jvmtiEnv *jvmtiEnv, int type, const char* log)
             sizeMap[log_type_temp] = 0;
         }
         int currentSize = currentSizeMap[log_type_temp]; // 当前写入的大小，每次写入更新
-        int datalen = sizeof(realLog); // 写入大小
+        int datalen = strlen(realLog); // 写入大小
         if (currentSize + datalen >= sizeMap[log_type_temp])
         {
             __android_log_print(ANDROID_LOG_ERROR,"chenglei_jni", "currentSize：%d,datalen:%d,sizeMap:%ld,去扩容", currentSize,datalen,sizeMap[log_type_temp]);
@@ -121,7 +122,7 @@ void record_jvmti_log(jvmtiEnv *jvmtiEnv, int type, const char* log)
         }
         // 写入文件
         char* ptr = pointMap[log_type_temp];
-        __android_log_print(ANDROID_LOG_ERROR,"chenglei_jni", "memcpy参数:offset:%d,datalen:%d", currentSize,datalen);
+        __android_log_print(ANDROID_LOG_ERROR,"chenglei_jni", "memcpy参数:offset:%d,datalen:%d,reallog:%s", currentSize,datalen, realLog);
         memcpy(ptr+currentSize,realLog,datalen);
         currentSizeMap[log_type_temp] += datalen;
     }

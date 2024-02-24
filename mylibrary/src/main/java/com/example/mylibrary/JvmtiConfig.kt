@@ -40,7 +40,7 @@ class JvmtiConfig {
         JavaConfig.logDirPath = logDirPath
 
         // 读取现有的看看内容
-        File(logDirPath).listFiles()?.forEach { file->
+        /*File(logDirPath).listFiles()?.forEach { file->
             file?.let { file->
                 val random = RandomAccessFile(file,"rw")
                 val fileChannel = random.channel
@@ -61,11 +61,11 @@ class JvmtiConfig {
                 Log.e("chenglei_java", "日志文件内容：$content")
             }
         }
-
+*/
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             try {
 
-//                enableInner(context)
+                enableInner(context)
             } catch (e: Exception) {
                 e.printStackTrace()
             }

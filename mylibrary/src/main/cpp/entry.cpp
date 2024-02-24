@@ -52,7 +52,7 @@ Agent_OnAttach(JavaVM *vm, char *options, void *reserved) {
                                                                                 JNI_FALSE,
                                                                                 classLoader));
 
-    jfieldID logDirFieldId = jniEnv->GetStaticFieldI(javaConfigClass,"logDirPath","Ljava/lang/String;");
+    jfieldID logDirFieldId = jniEnv->GetStaticFieldID(javaConfigClass,"logDirPath","Ljava/lang/String;");
     gLogDir = static_cast<jstring>(jniEnv->GetStaticObjectField(javaConfigClass, logDirFieldId));
     const char* temp = jniEnv->GetStringUTFChars(gLogDir,JNI_FALSE);
     int length = jniEnv->GetStringLength(gLogDir);
